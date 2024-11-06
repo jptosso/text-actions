@@ -11,10 +11,11 @@ jobs:
       - name: Check if PR targets the specified branch
         id: branch_check
         run: |
-          if [ "${{ github.event.pull_request.base.ref }}" == "main" ]; then
+          if [ "${{ github.event.pull_request.base.ref }}" == "v3" ]; then
             echo "is_target_branch=true" >> $GITHUB_ENV
           else
             echo "is_target_branch=false" >> $GITHUB_ENV
+          fi
 
       - name: Add label to PR
         if: env.is_target_branch == 'true'
