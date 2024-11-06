@@ -1,0 +1,45 @@
+name: Copy Pull Request to v4
+
+on:
+  pull_request:
+    branches:
+      - v3
+    types: [opened]
+
+jobs:
+  copy-to-v4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Cherry-pick changes onto v4
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Fetch the latest v4 branch
+          git fetch origin v4
+
+          # Create a new branch based on v4
+          git checkout -b "copy-pr-${{ github.event.pull_request.number }}-to-v4" origin/v4
+
+          # Cherry-pick the original PR commit(s)
+          git cherry-pick -x $PR_HEAD_SHA || echo "No changes to cherry-pick"
+
+          # Push the new branch to origin
+          git push origin "copy-pr-${{ github.event.pull_request.number }}-to-v4"
+
+      - name: Create a new PR targeting v4
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          gh pr create --title "Copy of #${PR_NUMBER} to v4" \
+                       --body "This PR copies the changes from #${PR_NUMBER} to the v4 branch." \
+                       --base v4 \
+                       --head "copy-pr-${PR_NUMBER}-to-v4"
